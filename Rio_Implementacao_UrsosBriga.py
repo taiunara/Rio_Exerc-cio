@@ -148,8 +148,6 @@ class Rio(Ecossistema):
         logging.info(f'Inicializando o rio com tamanho {tamanho} e {rodadas} rodadas')
         self.__rodadas = rodadas
         self.__rio = LinkedList(tamanho)
-        # for i in range(len(self.__rio)):
-        #     self.__rio[i] = None
         self.__qtd_urso = int(len(self.__rio) * 0.2)
         self.__qtd_peixe = int(len(self.__rio) * 0.4)
         self.__qtd_tocas = int(len(self.__rio) * 0.1)
@@ -180,14 +178,6 @@ class Rio(Ecossistema):
                 return True
         return False
 
-    # def __contem_agua(self):
-    #     result = False
-    #     for i in self.__rio:
-    #         if isinstance(i, Agua):
-    #             result = True
-    #             break
-    #     return result
-
     def executar(self):
         rodada = 0
         while rodada < self.__rodadas:
@@ -201,7 +191,7 @@ class Rio(Ecossistema):
         for i in range(len(self.__rio)):
             if i in visitados:
                 continue
-            objeto = self.__rio[i]  # objeto na posição i
+            objeto = self.__rio[i] 
             if isinstance(objeto, (Urso, Peixe)):
                 movimento = objeto.mover()
                 destino = (i + movimento) % len(self.__rio)
@@ -214,14 +204,14 @@ class Rio(Ecossistema):
                 if visitado:
                     visitados.add(destino)
 
-            for i in range(len(self.__rio)):
-                if isinstance(self.__rio[i], Toca):
-                    toca = self.__rio[i]
-                    if toca.ocupante is not None and i not in visitados:
-                        saida = (i + randint(-1, 1)) % len(self.__rio)  # Usar módulo para movimento circular
-                        if 0 <= saida < len(self.__rio):  # Agora sempre estará dentro dos limites
+            for j in range(len(self.__rio)):
+                if isinstance(self.__rio[j], Toca):
+                    toca = self.__rio[j]
+                    if toca.ocupante is not None and j not in visitados:
+                        saida = (j + randint(-1, 1)) % len(self.__rio)
+                        if 0 <= saida < len(self.__rio):
                             if isinstance(self.__rio[saida], (Agua, Peixe)):
-                                logging.info(f'Peixe da Toca em {i} moveu-se para {saida}')
+                                logging.info(f'Peixe da Toca em {j} moveu-se para {saida}')
                                 self.__rio[saida] = toca.ocupante
                                 visitados.add(saida)
                                 toca.ocupante = None
@@ -246,13 +236,13 @@ class Rio(Ecossistema):
             logging.debug(f'{objeto} em {origem} come peixe em {destino}')
             self.__rio[destino] = objeto
             self.__rio[origem] = Agua()
-            objeto.vida = min(objeto.vida + 1, 3)
+            objeto.vida = min(objeto.vida + 1, 2)
             return True
 
         if isinstance(objeto, Peixe) and isinstance(alvo, Urso):
             logging.debug(f'Peixe em {origem} é comido por urso em {destino}')
             self.__rio[origem] = Agua()
-            alvo.vida = min(alvo.vida + 1, 3)
+            alvo.vida = min(alvo.vida + 1, 2)
             return True
 
         if isinstance(alvo, Toca):
@@ -265,7 +255,7 @@ class Rio(Ecossistema):
                 else:
                     logging.debug(f'{objeto} tentou entrar na Toca em {destino}, mas não conseguiu')
                     return False
-            logging.debug(f'Urso tentou entrar em Toca em {destino} — bloqueado.')
+            logging.debug(f'Urso tentou entrar em Toca em {destino}: bloqueado.')
             return False
         if isinstance(objeto, Urso) and isinstance(alvo, Urso):
             if objeto.vida == alvo.vida:
