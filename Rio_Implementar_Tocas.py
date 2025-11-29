@@ -176,13 +176,13 @@ class Rio(Ecossistema):
                 return True
         return False
 
-    def __contem_agua(self):
-        result = False
-        for i in self.__rio:
-            if isinstance(i, Agua):
-                result = True
-                break
-        return result
+    # def __contem_agua(self):
+    #     result = False
+    #     for i in self.__rio:
+    #         if isinstance(i, Agua):
+    #             result = True
+    #             break
+    #     return result
 
     def executar(self):
         rodada = 0
@@ -197,29 +197,32 @@ class Rio(Ecossistema):
         for i in range(len(self.__rio)):
             if i in visitados:
                 continue
-            objeto = self.__rio[i]  # objeto na posiÃ§Ã£o i
-            if isinstance(objeto, (Urso, Peixe)):  # apenas animais se movem
+            objeto = self.__rio[i] 
+            if isinstance(objeto, (Urso, Peixe)):  
                 movimento = objeto.mover()
                 destino = (i + movimento) % len(self.__rio)
                 logging.debug(f'{objeto} na posição {i} tenta mover para {destino}')
-                # if destino < 0 or destino >= len(self.__rio) or destino == i:
                 if destino == i:
                     logging.debug(f'{objeto} na posição {i} permanece no lugar')
                     continue
-                alvo = self.__rio[destino]  # o que estÃ¡ no destino
+                alvo = self.__rio[destino] 
                 visitado = self.__colidir(objeto, alvo, i, destino)
                 if visitado:
                     visitados.add(destino)
             
-            for i in range(len(self.__rio)):
-                if isinstance(self.__rio[i], Toca):
-                    toca = self.__rio[i]
-                    if toca.ocupante is not None:
-                        saida = i + randint(-1, 1)
-                        if 0 <= saida < len(self.__rio):
-                            if isinstance(self.__rio[saida], Agua):
-                                self.__rio[saida] = toca.ocupante
-                                toca.ocupante = None
+                for i in range(len(self.__rio)):
+                    if isinstance(self.__rio[i], Toca):
+                        toca = self.__rio[i]
+                        if toca.ocupante is not None and i not in visitados:
+                            saida = i + randint(-1, 1)
+                            if saida < 0 or saida >= len(self.__rio):
+                                continue
+                            if 0 <= saida < len(self.__rio):
+                                if isinstance(self.__rio[saida], (Agua, Peixe)):
+                                    logging.info(f'Peixe da Toca em {i} moveu-se para {saida}')
+                                    self.__rio[saida] = toca.ocupante
+                                    visitados.add(saida)
+                                    toca.ocupante = None
 
     def __colidir(self, objeto, alvo, origem: int, destino: int):
         if isinstance(alvo, Agua):
@@ -244,7 +247,7 @@ class Rio(Ecossistema):
                     return True
                 else:
                     return False
-            logging.debug("Urso tentou entrar em Toca — movimento bloqueado.")
+            logging.debug("Urso tentou entrar em Toca: movimento bloqueado.")
             return False
         reproduz, qtd = objeto.reproduzir(alvo)
         if reproduz and self.__has_empty_position():
