@@ -153,10 +153,12 @@ class Rio(Ecossistema):
         self.__qtd_urso = int(len(self.__rio) * 0.2)
         self.__qtd_peixe = int(len(self.__rio) * 0.4)
         self.__qtd_tocas = int(len(self.__rio) * 0.1)
+        self.__qtd_agua = int(len(self.__rio) * 0.2)
         self.__popular_rio(self.__qtd_tocas, Toca)
         self.__popular_rio(self.__qtd_urso, Urso)
         self.__popular_rio(self.__qtd_peixe, Peixe)
-        self.__preencher_npc(Agua)
+        self.__popular_rio(self.__qtd_agua, Agua)
+        # self.__preencher_npc(Agua)
         logging.info(f'Rio inicializado: {self}')
 
     def __popular_rio(self, qtd, classe):
@@ -211,20 +213,18 @@ class Rio(Ecossistema):
                 visitado = self.__colidir(objeto, alvo, i, destino)
                 if visitado:
                     visitados.add(destino)
-            
+
             for i in range(len(self.__rio)):
                 if isinstance(self.__rio[i], Toca):
                     toca = self.__rio[i]
                     if toca.ocupante is not None and i not in visitados:
-                        saida = i + randint(-1, 1)
-                        if saida < 0 or saida >= len(self.__rio):
-                            continue
-                        if 0 <= saida < len(self.__rio):
+                        saida = (i + randint(-1, 1)) % len(self.__rio)  # Usar módulo para movimento circular
+                        if 0 <= saida < len(self.__rio):  # Agora sempre estará dentro dos limites
                             if isinstance(self.__rio[saida], (Agua, Peixe)):
-                                    logging.info(f'Peixe da Toca em {i} moveu-se para {saida}')
-                                    self.__rio[saida] = toca.ocupante
-                                    visitados.add(saida)
-                                    toca.ocupante = None
+                                logging.info(f'Peixe da Toca em {i} moveu-se para {saida}')
+                                self.__rio[saida] = toca.ocupante
+                                visitados.add(saida)
+                                toca.ocupante = None
 
     def __colidir(self, objeto, alvo, origem: int, destino: int):
         """
