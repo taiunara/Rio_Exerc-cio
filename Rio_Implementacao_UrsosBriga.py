@@ -144,13 +144,12 @@ class Ecossistema(ABC):
 
 
 class Rio(Ecossistema):
-
     def __init__(self, tamanho, rodadas=10):
         logging.info(f'Inicializando o rio com tamanho {tamanho} e {rodadas} rodadas')
         self.__rodadas = rodadas
         self.__rio = LinkedList(tamanho)
-        for i in range(len(self.__rio)):
-            self.__rio[i] = None
+        # for i in range(len(self.__rio)):
+        #     self.__rio[i] = None
         self.__qtd_urso = int(len(self.__rio) * 0.2)
         self.__qtd_peixe = int(len(self.__rio) * 0.4)
         self.__qtd_tocas = int(len(self.__rio) * 0.1)
@@ -179,13 +178,13 @@ class Rio(Ecossistema):
                 return True
         return False
 
-    def __contem_agua(self):
-        result = False
-        for i in self.__rio:
-            if isinstance(i, Agua):
-                result = True
-                break
-        return result
+    # def __contem_agua(self):
+    #     result = False
+    #     for i in self.__rio:
+    #         if isinstance(i, Agua):
+    #             result = True
+    #             break
+    #     return result
 
     def executar(self):
         rodada = 0
@@ -200,15 +199,15 @@ class Rio(Ecossistema):
         for i in range(len(self.__rio)):
             if i in visitados:
                 continue
-            objeto = self.__rio[i]  # objeto na posiÃ§Ã£o i
-            if isinstance(objeto, (Urso, Peixe)):  # apenas animais se movem
+            objeto = self.__rio[i]  # objeto na posição i
+            if isinstance(objeto, (Urso, Peixe)):
                 movimento = objeto.mover()
                 destino = (i + movimento) % len(self.__rio)
                 logging.debug(f'{objeto} na posição {i} tenta mover para {destino}')
                 if destino == i:
                     logging.debug(f'{objeto} na posição {i} permanece no lugar')
                     continue
-                alvo = self.__rio[destino]  # o que estÃ¡ no destino
+                alvo = self.__rio[destino]
                 visitado = self.__colidir(objeto, alvo, i, destino)
                 if visitado:
                     visitados.add(destino)
@@ -216,12 +215,16 @@ class Rio(Ecossistema):
             for i in range(len(self.__rio)):
                 if isinstance(self.__rio[i], Toca):
                     toca = self.__rio[i]
-                    if toca.ocupante is not None:
+                    if toca.ocupante is not None and i not in visitados:
                         saida = i + randint(-1, 1)
+                        if saida < 0 or saida >= len(self.__rio):
+                            continue
                         if 0 <= saida < len(self.__rio):
-                            if isinstance(self.__rio[saida], Agua):
-                                self.__rio[saida] = toca.ocupante
-                                toca.ocupante = None
+                            if isinstance(self.__rio[saida], (Agua, Peixe)):
+                                    logging.info(f'Peixe da Toca em {i} moveu-se para {saida}')
+                                    self.__rio[saida] = toca.ocupante
+                                    visitados.add(saida)
+                                    toca.ocupante = None
 
     def __colidir(self, objeto, alvo, origem: int, destino: int):
         """
