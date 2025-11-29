@@ -67,6 +67,9 @@ class Animal(ABC):
 
 class Urso(Animal):
 
+    def __init__(self):
+        self.vida = random.randint(2, 3)
+
     def reproduzir(self, animal) -> (bool, int):
         result = False, 0
         if isinstance(animal, Urso):
@@ -74,10 +77,10 @@ class Urso(Animal):
         return result
 
     def __repr__(self):
-        return 'Urso'
+        return f'Urso(Vida={self.vida})'
 
     def __str__(self):
-        return 'Urso'
+        return f'Urso(Vida={self.vida})'
 
 
 class Peixe(Animal):
@@ -221,37 +224,56 @@ class Rio(Ecossistema):
                                 self.__rio[saida] = toca.ocupante
                                 toca.ocupante = None
 
-    def __colidir(self, objeto, alvo, origem: int, destino: int):
-        if isinstance(alvo, Agua):
-            logging.debug(f'{objeto} move de {origem} para Água em {destino}')
-            self.__rio[destino] = objeto
-            self.__rio[origem] = Agua()
-            return True
-        if isinstance(objeto, Urso) and isinstance(alvo, Peixe):
-            logging.debug(f'Urso em {origem} come peixe em {destino}')
-            self.__rio[destino] = objeto
-            self.__rio[origem] = Agua()
-            return True
-        if isinstance(objeto, Peixe) and isinstance(alvo, Urso):
-            logging.debug(f'Peixe em {origem} é comido por urso em {destino}')
-            self.__rio[origem] = Agua()
-            return True
-        if isinstance(alvo, Toca):
-            if isinstance(objeto, Peixe):
-                entrou = alvo.tentar_entrar(objeto)
-                if entrou:
-                    self.__rio[origem] = Agua()
-                    return True
-                else:
-                    return False
-            logging.debug("Urso tentou entrar em Toca — movimento bloqueado.")
+        def __colidir(self, objeto, alvo, origem: int, destino: int):
+            """
+            Trata a colisão ou interação de um animal com o que está na posição de destino.
+            """
+            if isinstance(alvo, Agua):
+                if isinstance(objeto, Urso):
+                    # urso que não come nada perde 1 de vida
+                    objeto.vida -= 1
+                    if objeto.vida <= 0:
+                        logging.debug(f'{objeto} em {origem} morreu de fraqueza!')
+                        self.__rio[origem] = Agua()
+                        return True
+                logging.debug(f'{objeto} move de {origem} para Água em {destino}')
+                self.__rio[destino] = objeto
+                self.__rio[origem] = Agua()
+                return True
+            if isinstance(objeto, Urso) and isinstance(alvo, Peixe):
+                logging.debug(f'{objeto} em {origem} come peixe em {destino}')
+                self.__rio[destino] = objeto
+                self.__rio[origem] = Agua()
+                # urso recupera 1 de vida, mas no máximo 3
+                objeto.vida = min(objeto.vida + 1, 3)
+                return True
+            if isinstance(objeto, Peixe) and isinstance(alvo, Urso):
+                logging.debug(f'Peixe em {origem} é comido por urso em {destino}')
+                self.__rio[origem] = Agua()
+                # urso recupera 1 de vida
+                alvo.vida = min(alvo.vida + 1, 3)
+                return True
+            if isinstance(alvo, Toca):
+                if isinstance(objeto, Peixe):
+                    entrou = alvo.tentar_entrar(objeto)
+                    if entrou:
+                        logging.debug(f'{objeto} entrou na Toca em {destino}')
+                        self.__rio[origem] = Agua()
+                        return True
+                    else:
+                        logging.debug(f'{objeto} tentou entrar na Toca em {destino}, mas não conseguiu')
+                        return False
+                logging.debug(f'Urso tentou entrar em Toca em {destino} — bloqueado.')
+                return False
+            reproduz, qtd = objeto.reproduzir(alvo)
+            if reproduz and self.__has_empty_position():
+                logging.debug(f'{objeto} e {alvo} reproduzem em {origem} e {destino}')
+                self.__popular_rio(qtd, objeto.__class__)
+                return True
+            if type(objeto) == type(alvo):
+                logging.debug(f'{objeto} e {alvo} colidem em {destino}, permanecem no lugar')
+                return False
             return False
-        reproduz, qtd = objeto.reproduzir(alvo)
-        if reproduz and self.__has_empty_position():
-            logging.debug(f'{objeto} e {alvo} reproduzem em {origem} e {destino}')
-            self.__popular_rio(qtd, objeto.__class__)
-            return True
-        return False
 
     def __repr__(self):
         return self.__rio.__repr__()
