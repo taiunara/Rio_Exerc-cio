@@ -214,15 +214,14 @@ class Rio(Ecossistema):
                     if isinstance(self.__rio[i], Toca):
                         toca = self.__rio[i]
                         if toca.ocupante is not None and i not in visitados:
-                            saida = i + randint(-1, 1)
-                            if saida < 0 or saida >= len(self.__rio):
-                                continue
-                            if 0 <= saida < len(self.__rio):
+                            saida = (i + randint(-1, 1)) % len(self.__rio)  # Usar módulo para movimento circular
+                            if 0 <= saida < len(self.__rio):  # Agora sempre estará dentro dos limites
                                 if isinstance(self.__rio[saida], (Agua, Peixe)):
                                     logging.info(f'Peixe da Toca em {i} moveu-se para {saida}')
                                     self.__rio[saida] = toca.ocupante
                                     visitados.add(saida)
                                     toca.ocupante = None
+
 
     def __colidir(self, objeto, alvo, origem: int, destino: int):
         if isinstance(alvo, Agua):
