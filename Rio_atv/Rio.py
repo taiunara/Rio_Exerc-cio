@@ -64,11 +64,13 @@ class Animal(ABC):
         """
         ...
 
+
 class Urso(Animal):
 
     def __init__(self):
         self.vida = random.randint(2, 3)
         self.qtd_peixes = 0
+        self.parado = 0
 
     def mover(self):
         return randint(-1, 1)
@@ -85,6 +87,7 @@ class Urso(Animal):
     def __str__(self):
         return f'Urso[♡={self.vida}]'
 
+
 class UrsoAlpha(Urso):
     def __init__(self):
         super().__init__()
@@ -95,6 +98,7 @@ class UrsoAlpha(Urso):
 
     def __str__(self):
         return f'Urso Alpha [♡={self.vida}]'
+
 
 class Peixe(Animal):
 
@@ -113,17 +117,23 @@ class Peixe(Animal):
     def __str__(self):
         return 'Peixe'
 
+
 class Tartaruga(Animal):
 
     def __init__(self):
         self.turno = 0
 
     def mover(self):
-        return randint(-1, 0)
+        if self.turno == 2:
+            self.turno =0
+            return -1
+        else:
+            self.turno += 1
+            return 0
 
     def reproduzir(self, animal):
         result = False, 0
-        if isinstance(animal,Tartaruga):
+        if isinstance(animal, Tartaruga):
             result = True, 1
         return result
 
@@ -137,6 +147,7 @@ class Tartaruga(Animal):
 class NPC(ABC):
     ...
 
+
 class Agua(NPC):
 
     def __repr__(self):
@@ -145,10 +156,11 @@ class Agua(NPC):
     def __str__(self):
         return 'Agua'
 
+
 class Toca(NPC):
     def __init__(self):
         self.ocupante = None
-        self.vida = randint(1,3)
+        self.vida = randint(1, 3)
 
     def esta_vazia(self):
         return self.ocupante is None
@@ -170,6 +182,7 @@ class Toca(NPC):
 
     def __str__(self):
         return self.__repr__()
+
 
 class Ecossistema(ABC):
 
@@ -223,52 +236,41 @@ class Rio(Ecossistema):
             logging.info(f'Estado do rio após rodada {rodada + 1}: {self}')
             rodada += 1
 
-    def __rodada(self): 
+    def __rodada(self):
         visitados = set()
         for i in range(len(self.__rio)):
             if i in visitados:
                 continue
+
             objeto = self.__rio[i]
-            if isinstance(objeto, (Urso, Peixe)):
+
+            if isinstance(objeto, (Urso, Peixe, Tartaruga)):
                 movimento = objeto.mover()
                 destino = (i + movimento) % len(self.__rio)
                 logging.debug(f'{objeto} na posição {i} tenta mover para {destino}')
+
                 if destino == i:
                     logging.debug(f'{objeto} na posição {i} permanece no lugar')
                     continue
+
                 alvo = self.__rio[destino]
                 visitado = self.__colidir(objeto, alvo, i, destino)
                 if visitado:
                     visitados.add(destino)
 
 
-            elif isinstance(objeto, Tartaruga):
-                if objeto.turno == 0:
-                    movimento = objeto.mover()
-                    destino = (i + movimento) % len(self.__rio)
-                    logging.debug(f'{objeto} na posição {i} tenta mover para {destino}')
-                    if destino == i:
-                        logging.debug(f'{objeto} na posição {i} permanece no lugar')
-                    else:
-                        alvo = self.__rio[destino]
-                        visitado = self.__colidir(objeto, alvo, i, destino)
-                        if visitado:
-                            visitados.add(destino)
-                else:
-                    logging.debug(f'{objeto} na posição {i} permanece no lugar')
-                objeto.turno = (objeto.turno + 1) % 3
+        for j in range(len(self.__rio)):
+            if isinstance(self.__rio[j], Toca):
+                toca = self.__rio[j]
 
-            for j in range(len(self.__rio)):
-                if isinstance(self.__rio[j], Toca):
-                    toca = self.__rio[j]
-                    if toca.ocupante is not None and j not in visitados:
-                        saida = (j + randint(-1, 1)) % len(self.__rio)
-                        if 0 <= saida < len(self.__rio):
-                            if isinstance(self.__rio[saida], (Agua, Peixe)):
-                                logging.info(f'Peixe da Toca em {j} moveu-se para {saida}')
-                                self.__rio[saida] = toca.ocupante
-                                visitados.add(saida)
-                                toca.ocupante = None
+                if toca.ocupante is not None and j not in visitados:
+                    saida = (j + randint(-1, 1)) % len(self.__rio)
+
+                    if isinstance(self.__rio[saida], (Agua, Peixe)):
+                        logging.info(f'Peixe da Toca em {j} moveu-se para {saida}')
+                        self.__rio[saida] = toca.ocupante
+                        visitados.add(saida)
+                        toca.ocupante = None
 
     def __colidir(self, objeto, alvo, origem: int, destino: int):
         """
@@ -290,7 +292,7 @@ class Rio(Ecossistema):
             logging.debug(f'{objeto} em {origem} come peixe em {destino}')
             self.__rio[destino] = objeto
             self.__rio[origem] = Agua()
-            objeto.vida = min(objeto.vida + 1, 3)
+            objeto.vida = min(objeto.vida + randint(0,1), 3)
             objeto.qtd_peixes += 1
             logging.debug(f'{objeto} comeu {objeto.qtd_peixes} Peixes')
             if objeto.qtd_peixes == 3 or objeto.vida == 5:
@@ -301,7 +303,6 @@ class Rio(Ecossistema):
                 self.__rio[destino] = novo
                 self.__rio[origem] = Agua()
             return True
-
 
         if isinstance(objeto, Tartaruga) and isinstance(alvo, Urso):
             logging.debug(f'Tartaruga em {origem} morde urso em {destino}')
@@ -316,7 +317,7 @@ class Rio(Ecossistema):
             objeto.vida -= 1
             if objeto.vida <= 0:
                 logging.debug(f'{objeto} morreu por mordida de Tartaruga em {destino}')
-                self.__rio[destino] = Agua()
+                self.__rio[origem] = Agua()
             return True
 
         if isinstance(objeto, Peixe) and isinstance(alvo, Urso):
@@ -355,7 +356,10 @@ class Rio(Ecossistema):
                 else:
                     logging.debug(f'{objeto} tentou destruir Toca em {destino} mas foi bloqueado.')
                 return False
-            return False
+            elif isinstance(objeto, Tartaruga):
+                logging.debug(f'{objeto} tentou entrar na Toca em {destino}, mas não conseguiu')
+                return False
+
 
 
         if isinstance(objeto, Urso) and isinstance(alvo, Urso):
